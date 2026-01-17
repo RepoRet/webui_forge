@@ -137,7 +137,7 @@ var regen_img2img = null;
 					interrupt.style.display = 'block';
 				}
 			},
-			180000);
+			150000);
 		}
     };
     appendContextMenuOption('#txt2img_generate', 'Generate forever', generateOnRepeat_txt2img);
@@ -164,7 +164,7 @@ var regen_img2img = null;
 					interrupt.style.display = 'block';
 				}
 			},
-			500);
+			150000);
 		}
     };
     appendContextMenuOption('#img2img_generate', 'Generate forever', generateOnRepeat_img2img);
