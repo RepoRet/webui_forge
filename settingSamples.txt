@@ -1,0 +1,2 @@
+Consistent Output Naming Convention.
+[datetime<%Y%m%d%H%M%S>]_AI[seed]
