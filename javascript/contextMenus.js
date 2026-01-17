@@ -137,7 +137,7 @@ var regen_img2img = null;
 					interrupt.style.display = 'block';
 				}
 			},
-			500);
+			180000);
 		}
     };
     appendContextMenuOption('#txt2img_generate', 'Generate forever', generateOnRepeat_txt2img);
