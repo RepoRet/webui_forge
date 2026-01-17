@@ -384,7 +384,7 @@ def get_sampler_scheduler(p, sampler):
 class FilenameGenerator:
     replacements = {
         'basename': lambda self: self.basename or 'img',
-        'seed': lambda self: self.seed if self.seed is not None else '',
+        'seed': lambda self: f"{self.seed:020d}" if self.seed is not None else '',
         'seed_first': lambda self: self.seed if self.p.batch_size == 1 else self.p.all_seeds[0],
         'seed_last': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.batch_size == 1 else self.p.all_seeds[-1],
         'steps': lambda self:  self.p and self.p.steps,
