@@ -1,5 +1,6 @@
 import datetime
 import mimetypes
+import json
 import os
 import sys
 from functools import reduce
@@ -267,6 +268,63 @@ def create_override_settings_dropdown(tabname, row):
 
     return dropdown
 
+def load_session_state():
+    session_file = os.path.join(script_path, 'user_session.json')
+    if os.path.exists(session_file):
+        with open(session_file, 'r') as f:
+            return json.load(f)
+    return {}
+
+def save_txt2img_state(
+    dummy, prompt, negative_prompt, styles, steps, sampler_index, latent_sampler_index,
+    restore_faces, tiling, n_iter, batch_size, cfg_scale, image_cfg_scale,
+    distilled_cfg_scale, clip_skip, seed, subseed, subseed_strength,
+    seed_resize_from_h, seed_resize_from_w, height, width, enable_hr,
+    denoising_strength, hr_scale, hr_upscaler, hr_second_pass_steps,
+    hr_resize_x, hr_resize_y, hr_checkpoint_name, hr_sampler_name,
+    hr_latent_sampler_name, hr_prompt, hr_negative_prompt, override_settings_texts,
+    *script_inputs  # Ignore script-specific inputs for now
+):
+    state = {
+        'prompt': prompt,
+        'negative_prompt': negative_prompt,
+        'styles': styles,  # List of strings
+        'steps': steps,
+        'sampler_index': sampler_index,  # Index, not name
+        'latent_sampler_index': latent_sampler_index,
+        'restore_faces': restore_faces,
+        'tiling': tiling,
+        'n_iter': n_iter,
+        'batch_size': batch_size,
+        'cfg_scale': cfg_scale,
+        'image_cfg_scale': image_cfg_scale,
+        'distilled_cfg_scale': distilled_cfg_scale,
+        'clip_skip': clip_skip,
+        'seed': seed,
+        'subseed': subseed,
+        'subseed_strength': subseed_strength,
+        'seed_resize_from_h': seed_resize_from_h,
+        'seed_resize_from_w': seed_resize_from_w,
+        'height': height,
+        'width': width,
+        'enable_hr': enable_hr,
+        'denoising_strength': denoising_strength,
+        'hr_scale': hr_scale,
+        'hr_upscaler': hr_upscaler,  # String name
+        'hr_second_pass_steps': hr_second_pass_steps,
+        'hr_resize_x': hr_resize_x,
+        'hr_resize_y': hr_resize_y,
+        'hr_checkpoint_name': hr_checkpoint_name,
+        'hr_sampler_name': hr_sampler_name,  # Index for sampler
+        'hr_latent_sampler_name': hr_latent_sampler_name,  # Index
+        'hr_prompt': hr_prompt,
+        'hr_negative_prompt': hr_negative_prompt,
+        'override_settings_texts': override_settings_texts  # Text
+    }
+    session_file = os.path.join(script_path, 'user_session.json')
+    with open(session_file, 'w') as f:
+        json.dump(state, f, indent=4)
+    return []  # No output needed
 
 def create_ui():
     import modules.img2img
@@ -282,6 +340,8 @@ def create_ui():
     scripts.scripts_current = scripts.scripts_txt2img
     scripts.scripts_txt2img.initialize_scripts(is_img2img=False)
 
+    loaded_state = load_session_state()
+    
     with gr.Blocks(analytics_enabled=False, head=canvas_head) as txt2img_interface:
         toprow = ui_toprow.Toprow(is_img2img=False, is_compact=shared.opts.compact_prompt_box)
 
@@ -469,6 +529,21 @@ def create_ui():
 
             toprow.prompt.submit(**txt2img_args)
             toprow.submit.click(**txt2img_args)
+
+            toprow.submit.click(
+                fn=save_txt2img_state,
+                inputs=txt2img_inputs,
+                outputs=[],
+                show_progress=False
+            ).then(**txt2img_args)  # Chain to original generation
+            
+            toprow.prompt.submit(
+                fn=save_txt2img_state,
+                inputs=txt2img_inputs,
+                outputs=[],
+                show_progress=False
+            ).then(**txt2img_args)
+
 
             def select_gallery_image(index):
                 index = int(index)
@@ -1083,3 +1158,4 @@ def setup_ui_api(app):
 
     import fastapi.staticfiles
     app.mount("/webui-assets", fastapi.staticfiles.StaticFiles(directory=launch_utils.repo_dir('stable-diffusion-webui-assets')), name="webui-assets")
+
