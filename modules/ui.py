@@ -572,7 +572,7 @@ def create_ui():
                     state.get('denoising_strength', 0.7),
                     state.get('hr_scale', 2.0),
                     state.get('hr_second_pass_steps', 0),
-                    # Add more here if you saved other fields (e.g., seed, sampler_name)
+                    # Add more here if you saved other fields (e.g., state.get('seed', -1))
                 ]
             
             with gr.Row():
@@ -584,7 +584,7 @@ def create_ui():
                 outputs=[
                     toprow.prompt,          # Prompt textbox
                     toprow.negative_prompt, # Negative prompt textbox
-                    steps,                  # Assuming 'steps' is the sampling steps slider variable
+                    steps,                  # Sampling steps slider
                     cfg_scale,              # CFG scale slider
                     width,                  # Width slider
                     height,                 # Height slider
@@ -1210,5 +1210,6 @@ def setup_ui_api(app):
 
     import fastapi.staticfiles
     app.mount("/webui-assets", fastapi.staticfiles.StaticFiles(directory=launch_utils.repo_dir('stable-diffusion-webui-assets')), name="webui-assets")
+
 
 
