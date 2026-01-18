@@ -545,20 +545,6 @@ def create_ui():
             toprow.prompt.submit(**txt2img_args)
             toprow.submit.click(**txt2img_args)
 
-            toprow.submit.click(
-                fn=save_txt2img_state,
-                inputs=txt2img_inputs,
-                outputs=[],
-                show_progress=False
-            ).then(**txt2img_args)  # Chain to original generation
-            
-            toprow.prompt.submit(
-                fn=save_txt2img_state,
-                inputs=txt2img_inputs,
-                outputs=[],
-                show_progress=False
-            ).then(**txt2img_args)
-
             # --- Manual reload button for persistence ---
             def reload_settings():
                 state = load_session_state()  # Reload from JSON
@@ -595,7 +581,20 @@ def create_ui():
                 ]
             )
             # --- End manual reload button ---
-
+            
+            toprow.submit.click(
+                fn=save_txt2img_state,
+                inputs=txt2img_inputs,
+                outputs=[],
+                show_progress=False
+            ).then(**txt2img_args)  # Chain to original generation
+            
+            toprow.prompt.submit(
+                fn=save_txt2img_state,
+                inputs=txt2img_inputs,
+                outputs=[],
+                show_progress=False
+            ).then(**txt2img_args)
 
             def select_gallery_image(index):
                 index = int(index)
@@ -1210,6 +1209,7 @@ def setup_ui_api(app):
 
     import fastapi.staticfiles
     app.mount("/webui-assets", fastapi.staticfiles.StaticFiles(directory=launch_utils.repo_dir('stable-diffusion-webui-assets')), name="webui-assets")
+
 
 
 
