@@ -1,6 +1,5 @@
 import datetime
 import mimetypes
-import json
 import os
 import sys
 from functools import reduce
@@ -268,63 +267,6 @@ def create_override_settings_dropdown(tabname, row):
 
     return dropdown
 
-def load_session_state():
-    session_file = os.path.join(script_path, 'user_session.json')
-    if os.path.exists(session_file):
-        with open(session_file, 'r') as f:
-            return json.load(f)
-    return {}
-
-def save_txt2img_state(
-    dummy, prompt, negative_prompt, styles, steps, sampler_index, latent_sampler_index,
-    restore_faces, tiling, n_iter, batch_size, cfg_scale, image_cfg_scale,
-    distilled_cfg_scale, clip_skip, seed, subseed, subseed_strength,
-    seed_resize_from_h, seed_resize_from_w, height, width, enable_hr,
-    denoising_strength, hr_scale, hr_upscaler, hr_second_pass_steps,
-    hr_resize_x, hr_resize_y, hr_checkpoint_name, hr_sampler_name,
-    hr_latent_sampler_name, hr_prompt, hr_negative_prompt, override_settings_texts,
-    *script_inputs  # Ignore script-specific inputs for now
-):
-    state = {
-        'prompt': prompt,
-        'negative_prompt': negative_prompt,
-        'styles': styles,  # List of strings
-        'steps': steps,
-        'sampler_index': sampler_index,  # Index, not name
-        'latent_sampler_index': latent_sampler_index,
-        'restore_faces': restore_faces,
-        'tiling': tiling,
-        'n_iter': n_iter,
-        'batch_size': batch_size,
-        'cfg_scale': cfg_scale,
-        'image_cfg_scale': image_cfg_scale,
-        'distilled_cfg_scale': distilled_cfg_scale,
-        'clip_skip': clip_skip,
-        'seed': seed,
-        'subseed': subseed,
-        'subseed_strength': subseed_strength,
-        'seed_resize_from_h': seed_resize_from_h,
-        'seed_resize_from_w': seed_resize_from_w,
-        'height': height,
-        'width': width,
-        'enable_hr': enable_hr,
-        'denoising_strength': denoising_strength,
-        'hr_scale': hr_scale,
-        'hr_upscaler': hr_upscaler,  # String name
-        'hr_second_pass_steps': hr_second_pass_steps,
-        'hr_resize_x': hr_resize_x,
-        'hr_resize_y': hr_resize_y,
-        'hr_checkpoint_name': hr_checkpoint_name,
-        'hr_sampler_name': hr_sampler_name,  # Index for sampler
-        'hr_latent_sampler_name': hr_latent_sampler_name,  # Index
-        'hr_prompt': hr_prompt,
-        'hr_negative_prompt': hr_negative_prompt,
-        'override_settings_texts': override_settings_texts  # Text
-    }
-    session_file = os.path.join(script_path, 'user_session.json')
-    with open(session_file, 'w') as f:
-        json.dump(state, f, indent=4)
-    return []  # No output needed
 
 def create_ui():
     import modules.img2img
@@ -340,23 +282,6 @@ def create_ui():
     scripts.scripts_current = scripts.scripts_txt2img
     scripts.scripts_txt2img.initialize_scripts(is_img2img=False)
 
-    # --- Persistence load ---
-    import json
-    def load_session_state():
-        session_file = os.path.join(script_path, 'user_session.json')
-        if os.path.exists(session_file):
-            try:
-                with open(session_file, 'r') as f:
-                    state = json.load(f)
-                    print("Loaded session state from JSON:", state)  # Debug: check server console
-                    return state
-            except Exception as e:
-                print("Error loading session JSON:", e)
-        return {}
-   
-    loaded_state = load_session_state()
-    # --- End persistence load ---
-    
     with gr.Blocks(analytics_enabled=False, head=canvas_head) as txt2img_interface:
         toprow = ui_toprow.Toprow(is_img2img=False, is_compact=shared.opts.compact_prompt_box)
 
@@ -381,8 +306,8 @@ def create_ui():
                     elif category == "dimensions":
                         with FormRow():
                             with gr.Column(elem_id="txt2img_column_size", scale=4):
-                                width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=loaded_state.get('width', 512), elem_id="txt2img_width")
-                                height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=loaded_state.get('height', 512), elem_id="txt2img_height")
+                                width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="txt2img_width")
+                                height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="txt2img_height")
 
                             with gr.Column(elem_id="txt2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
                                 res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn", tooltip="Switch width/height")
@@ -395,7 +320,7 @@ def create_ui():
                     elif category == "cfg":
                         with gr.Row():
                             distilled_cfg_scale = gr.Slider(minimum=0.0, maximum=30.0, step=0.1, label='Distilled CFG Scale', value=3.5, elem_id="txt2img_distilled_cfg_scale")
-                            cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='CFG Scale', value=loaded_state.get('cfg_scale', 7.0), elem_id="txt2img_cfg_scale")
+                            cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='CFG Scale', value=7.0, elem_id="txt2img_cfg_scale")
                             cfg_scale.change(lambda x: gr.update(interactive=(x != 1)), inputs=[cfg_scale], outputs=[toprow.negative_prompt], queue=False, show_progress=False)
 
                     elif category == "checkboxes":
@@ -410,11 +335,11 @@ def create_ui():
 
                                 with FormRow(elem_id="txt2img_hires_fix_row1", variant="compact"):
                                     hr_upscaler = gr.Dropdown(label="Upscaler", elem_id="txt2img_hr_upscaler", choices=[*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]], value=shared.latent_upscale_default_mode)
-                                    hr_second_pass_steps = gr.Slider(minimum=0, maximum=150, step=1, label='Hires steps', value=loaded_state.get('hr_second_pass_steps', 0), elem_id="txt2img_hires_steps")
-                                    denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=loaded_state.get('denoising_strength', 0.7), elem_id="txt2img_denoising_strength")
+                                    hr_second_pass_steps = gr.Slider(minimum=0, maximum=150, step=1, label='Hires steps', value=0, elem_id="txt2img_hires_steps")
+                                    denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7, elem_id="txt2img_denoising_strength")
 
                                 with FormRow(elem_id="txt2img_hires_fix_row2", variant="compact"):
-                                    hr_scale = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Upscale by", value=loaded_state.get('hr_scale', 2.0), elem_id="txt2img_hr_scale")
+                                    hr_scale = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Upscale by", value=2.0, elem_id="txt2img_hr_scale")
                                     hr_resize_x = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize width to", value=0, elem_id="txt2img_hr_resize_x")
                                     hr_resize_y = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize height to", value=0, elem_id="txt2img_hr_resize_y")
 
@@ -545,57 +470,6 @@ def create_ui():
             toprow.prompt.submit(**txt2img_args)
             toprow.submit.click(**txt2img_args)
 
-            # --- Manual reload button for persistence ---
-            def reload_settings():
-                state = load_session_state()  # Reload from JSON
-                return [
-                    state.get('prompt', ''),
-                    state.get('negative_prompt', ''),
-                    state.get('steps', 20),
-                    state.get('cfg_scale', 7.0),
-                    state.get('width', 512),
-                    state.get('height', 512),
-                    state.get('denoising_strength', 0.7),
-                    state.get('hr_scale', 2.0),
-                    state.get('hr_second_pass_steps', 0),
-                    # Add more here if you saved other fields (e.g., state.get('seed', -1))
-                ]
-            
-            with gr.Row():
-                reload_btn = gr.Button("Reload Last Settings", variant="secondary")
-            
-            reload_btn.click(
-                fn=reload_settings,
-                inputs=[],
-                outputs=[
-                    toprow.prompt,          # Prompt textbox
-                    toprow.negative_prompt, # Negative prompt textbox
-                    steps,                  # Sampling steps slider
-                    cfg_scale,              # CFG scale slider
-                    width,                  # Width slider
-                    height,                 # Height slider
-                    denoising_strength,     # Denoising strength slider
-                    hr_scale,               # Hires upscale slider
-                    hr_second_pass_steps,   # Hires steps slider
-                    # Add more outputs matching the return list above
-                ]
-            )
-            # --- End manual reload button ---
-            
-            toprow.submit.click(
-                fn=save_txt2img_state,
-                inputs=txt2img_inputs,
-                outputs=[],
-                show_progress=False
-            ).then(**txt2img_args)  # Chain to original generation
-            
-            toprow.prompt.submit(
-                fn=save_txt2img_state,
-                inputs=txt2img_inputs,
-                outputs=[],
-                show_progress=False
-            ).then(**txt2img_args)
-
             def select_gallery_image(index):
                 index = int(index)
                 if getattr(shared.opts, 'hires_button_gallery_insert', False):
@@ -670,7 +544,7 @@ def create_ui():
         ui_extra_networks.setup_ui(extra_networks_ui, output_panel.gallery)
 
         extra_tabs.__exit__()
-    
+
     scripts.scripts_current = scripts.scripts_img2img
     scripts.scripts_img2img.initialize_scripts(is_img2img=True)
 
@@ -1209,7 +1083,3 @@ def setup_ui_api(app):
 
     import fastapi.staticfiles
     app.mount("/webui-assets", fastapi.staticfiles.StaticFiles(directory=launch_utils.repo_dir('stable-diffusion-webui-assets')), name="webui-assets")
-
-
-
-
