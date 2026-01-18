@@ -10,7 +10,7 @@
 #clone_dir="stable-diffusion-webui"
 
 # Commandline arguments for webui.py, for example: export COMMANDLINE_ARGS="--medvram --opt-split-attention"
-#export COMMANDLINE_ARGS="--always-offload-from-vram --cuda-stream --pin-shared-memory --medvram --listen --xformers --o>
+#export COMMANDLINE_ARGS="--always-offload-from-vram --cuda-stream --pin-shared-memory --medvram --listen --xformers --opt-sdp-attention --gradio-auth user:yourpassword
 #--medvram --enable-insecure-extension-access"
 
 # python3 executable
